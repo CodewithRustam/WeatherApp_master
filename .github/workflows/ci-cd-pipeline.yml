@@ -1,0 +1,49 @@
+name: CI/CD Pipeline  # Name of the workflow
+
+on:
+  push:
+    branches:
+      - main  # Runs the pipeline when code is pushed to 'main'
+  pull_request:
+    branches:
+      - main  # Runs on pull requests targeting 'main'
+
+jobs:
+  build:
+    runs-on: windows-latest  # Uses a Windows runner (since .NET is Windows-friendly)
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4  # Fetches the latest code from the repo
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3  # Installs .NET SDK
+      with:
+        dotnet-version: '8.x'  # Change if using a different .NET version
+
+    - name: Restore Dependencies
+      run: dotnet restore  # Downloads project dependencies
+
+    - name: Build Project
+      run: dotnet build --configuration Release  # Compiles the code in Release mode
+
+    - name: Run Tests
+      run: dotnet test --configuration Release  # Executes unit tests
+
+    - name: Publish Project
+      run: dotnet publish -c Release -o ./publish  # Publishes the application files
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3  # Stores the published app as an artifact
+      with:
+        name: published-app
+        path: ./publish
+
+    # Optional: Deploy to Azure Web App
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: '<Your Azure Web App Name>'  # Change this
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: './publish'
+ 
